@@ -65,7 +65,7 @@ void z80::initMemory() {
       instructionsCount[i]=0;
     }
     clockCycles[0x3C] = 4;
-    clockCycles[0x76] = 4;
+    clockCycles[0x76] = 1;
     clockCycles[0x03] = 4;
     clockCycles[0x80] = 4;
     clockCycles[0x04] = 4;
@@ -123,7 +123,7 @@ void z80::initMemory() {
 
 void z80::loadTest() {
     writeByte(0x0100, 0x3C);
-    writeByte(0x0101, 0x0D);
+    writeByte(0x0101, 0x3C);
     writeByte(0x0102, 0x3C);
     writeByte(0x0103, 0x80);
     writeByte(0x0104, 0x76);
@@ -201,10 +201,17 @@ void z80::cpuStep() {
     instructionsCount[instruction]++;
     switch (instruction)
     {
-
     // NOP
     case 0x0:
-        break;
+       break;
+        //HALT
+    case 0x76:
+halted = 1;
+       break;
+       // INC BC    Example for increments a word
+    case 0x03:
+  BC++;
+       break;
 //inc B
     case 0x04:
   BC = HightoHigh(BC,BC+0x0100);
@@ -259,22 +266,146 @@ void z80::cpuStep() {
         //dec A
     case 0x3D:
   AF = HightoHigh(AF,AF-0x0100);
-    // HALT
-    case 0x76:
-        halted = 1;
         break;
-
-
-    // INC BC    Example for increments a word
-    case 0x03:
-	BC++;
-        //ignore setting flags for now
+      //and B
+    case 0xA0:
+ AF = bytetoHigh(AF, (AF >> 8) & (BC >> 8));
+      break;
+//and C/
+    case 0xA1:
+ AF = bytetoHigh(AF, (AF >> 8) & (BC));
+       break;
+  //and D
+    case 0xA2:
+ AF = bytetoHigh(AF, (AF >> 8) & (DE >> 8));
+       break;
+  //and EE
+     case 0xA3:
+ AF = bytetoHigh(AF, (AF >> 8) & (DE));
+       break;
+ //and HH
+     case 0xA4:
+ AF = bytetoHigh(AF, (AF >> 8) & (HL >> 8));
+       break;
+  //and LL
+     case 0xA5:
+ AF = bytetoHigh(AF, (AF >> 8) & (HL));
+       break;
+  //and AA
+      case 0xA7:
+ AF = bytetoHigh(AF, (AF >> 8) & (AF >> 8));
+       break;
+       //or B
+     case 0xB0:
+  AF = bytetoHigh(AF, (AF >> 8) | (BC >> 8));
+       break;
+ //or C/
+     case 0xB1:
+  AF = bytetoHigh(AF, (AF >> 8) | (BC));
         break;
-
-    // ADD A,B   Add  byte to a byte  result in A
+   //or D
+     case 0xB2:
+  AF = bytetoHigh(AF, (AF >> 8) | (DE >> 8));
+        break;
+   //or EE
+      case 0xB3:
+  AF = bytetoHigh(AF, (AF >> 8) | (DE));
+        break;
+  //or HH
+      case 0xB4:
+  AF = bytetoHigh(AF, (AF >> 8) | (HL >> 8));
+        break;
+   //or LL
+      case 0xB5:
+  AF = bytetoHigh(AF, (AF >> 8) | (HL));
+        break;
+   //or AA
+       case 0xB7:
+  AF = bytetoHigh(AF, (AF >> 8) | (AF >> 8));
+        break;
+        //xor B
+       case 0xA8:
+  AF = bytetoHigh(AF, (AF >> 8) ^ (BC >> 8));
+        break;
+       //xor C/
+       case 0xA9:
+  AF = bytetoHigh(AF, (AF >> 8) ^ (BC));
+         break;
+       //xor D
+       case 0xAA:
+  AF = bytetoHigh(AF, (AF >> 8) ^ (DE >> 8));
+         break;
+       //xor EE
+       case 0xAB:
+  AF = bytetoHigh(AF, (AF >> 8) ^ (DE));
+         break;
+       //xor HH
+       case 0xAC:
+  AF = bytetoHigh(AF, (AF >> 8) ^ (HL >> 8));
+         break;
+       //xor LL
+       case 0xAD:
+  AF = bytetoHigh(AF, (AF >> 8) ^ (HL));
+         break;
+       //xor AA
+        case 0xAF:
+  AF = bytetoHigh(AF, (AF >> 8) ^ (AF >> 8));
+         break;
+    // ADD B   Add  byte to a byte  result in A
     case 0x80:
-        AF = bytetoHigh(AF, (AF >> 8) + (BC >> 8));
-        //ignore setting flags for now
+  AF = bytetoHigh(AF, (AF >> 8) + (BC >> 8));
+        break;
+        //add C
+    case 0x81:
+  AF = bytetoHigh(AF, (AF >> 8) + BC);
+        break;
+        //add D
+     case 0x82:
+ AF = bytetoHigh(AF, (AF >> 8) + (DE >> 8));
+        break;
+        //add E
+     case 83:
+  AF = bytetoHigh(AF, (AF >> 8) + DE);
+        break;
+     case 0x84:
+      //add H
+  AF = bytetoHigh(AF, (AF >> 8) + (HL >> 8));
+        break;
+        //add L
+      case 0x85:
+  AF = bytetoHigh(AF, (AF >> 8) + HL);
+        break;
+        //add A
+      case 0x87:
+  AF = bytetoHigh(AF, (AF >> 8) + (AF >> 8));
+        break;
+      //sub B
+       case 0x90:
+  AF = bytetoHigh(AF, (AF >> 8) - (BC >> 8));
+        break;
+        //sub C
+       case 0x91:
+  AF = bytetoHigh(AF, (AF >> 8) - BC);
+        break;
+        //sub  D
+       case 0x92:
+  AF = bytetoHigh(AF, (AF >> 8) - (DE >> 8));
+        break;
+        //sub E
+       case 0x93:
+  AF = bytetoHigh(AF, (AF >> 8) - (DE));
+        break;
+        //sub H
+       case 0x94:
+  AF = bytetoHigh(AF, (AF >> 8) - (HL >> 8));
+        break;
+        //sub L
+       case 0x95:
+  AF = bytetoHigh(AF, (AF >> 8) - (HL));
+        break;
+        //sub A//
+       case 0x96:
+  AF = bytetoHigh(AF, (AF >> 8) - (AF >> 8));
         break;
 
     default:
